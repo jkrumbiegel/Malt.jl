@@ -100,9 +100,9 @@ mutable struct Worker <: AbstractWorker
     current_message_id::MsgID
     expected_replies::Dict{MsgID,Channel{WorkerResult}}
 
-    function Worker(; env=String[], exeflags=[])
+    function Worker(; exe=Base.julia_cmd()[1], env=String[], exeflags=[])
         # Spawn process
-        cmd = _get_worker_cmd(; env, exeflags)
+        cmd = _get_worker_cmd(; exe, env, exeflags)
         proc = open(Cmd(
             cmd; 
             detach=true,
@@ -251,7 +251,7 @@ end
 # The entire `src` dir should be relocatable, so that worker.jl can include("MsgType.jl").
 const src_path = RelocatableFolders.@path @__DIR__
 
-function _get_worker_cmd(exe=Base.julia_cmd()[1]; env, exeflags)
+function _get_worker_cmd(; exe, env, exeflags)
     return addenv(`$exe --startup-file=no $exeflags $(joinpath(src_path, "worker.jl"))`, String["OPENBLAS_NUM_THREADS=1", Base.byteenv(env)...])
 end
 
@@ -407,6 +407,14 @@ function remote_call_fetch(f, w::Worker, args...; kwargs...)
         w,
         MsgType.from_host_call_with_response,
         _new_call_msg(true, f, args, kwargs)
+    )
+end
+
+function remote_parse_eval_fetch(w::Worker, code::String)
+    _send_receive(
+        w,
+        MsgType.from_host_parse_eval_with_response,
+        code
     )
 end
 
