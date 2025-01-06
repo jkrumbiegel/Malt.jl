@@ -135,6 +135,27 @@ function handle(::Val{MsgType.from_host_call_with_response}, socket, msg, msg_id
     end
 end
 
+function handle(::Val{MsgType.from_host_parse_eval_with_response}, socket, code::String, msg_id::MsgID)
+    @async begin
+        result, success = try
+            result = eval(Meta.parse(code))
+
+            # @debug("WORKER: Evaluated result", result)
+            result, true
+        catch err
+            # @debug("WORKER: Got exception!", e)
+            (format_error(err, catch_backtrace()), false)
+        end
+
+        _serialize_msg(
+            socket,
+            success ? MsgType.from_worker_call_result : MsgType.from_worker_call_failure,
+            msg_id,
+            result
+        )
+    end
+end
+
 
 function handle(::Val{MsgType.from_host_call_without_response}, socket, msg, msg_id::MsgID)
     f, args, kwargs, _ignored = msg
