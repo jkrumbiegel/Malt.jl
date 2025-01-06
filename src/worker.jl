@@ -1,7 +1,7 @@
-pushfirst!(LOAD_PATH, "@stdlib")
+pushfirst!(LOAD_PATH, joinpath(@__DIR__, ".."))
 using Logging: Logging, @debug
-using Serialization: serialize, deserialize
 using Sockets: Sockets
+using BSON: BSON
 popfirst!(LOAD_PATH)
 
 ## Allow catching InterruptExceptions
@@ -75,7 +75,7 @@ function serve(server::Sockets.TCPServer)
         msg_id = read(io, MsgID)
         
         msg_data, success = try
-            (Base.invokelatest(deserialize, io), true)
+            (Base.invokelatest(BSON.load, io)[:data], true)
         catch err
             (format_error(err, catch_backtrace()), false)
         finally

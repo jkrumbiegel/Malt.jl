@@ -6,8 +6,8 @@ these functions are not stable.
 module Malt
 
 # using Logging: Logging, @debug
-using Serialization: serialize, deserialize
 using Sockets: Sockets
+using BSON: BSON
 
 using RelocatableFolders: RelocatableFolders
 
@@ -200,7 +200,7 @@ function _receive_loop(worker::Worker)
             msg_id = read(io, MsgID)
 
             msg_data, success = try
-                deserialize(io), true
+                BSON.load(io)[:data], true
             catch err
                 err, false
             finally
