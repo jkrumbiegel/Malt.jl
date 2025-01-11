@@ -410,14 +410,6 @@ function remote_call_fetch(f, w::Worker, args...; kwargs...)
     )
 end
 
-function remote_parse_eval_fetch(w::Worker, code::String)
-    _send_receive(
-        w,
-        MsgType.from_host_parse_eval_with_response,
-        code
-    )
-end
-
 """
     Malt.remote_call_wait(f, w::Worker, args...; kwargs...)
 
