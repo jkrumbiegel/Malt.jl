@@ -1,8 +1,8 @@
-pushfirst!(LOAD_PATH, joinpath(@__DIR__, ".."))
+BSON_source_file = ARGS[1]
+include(BSON_source_file)
 using Logging: Logging, @debug
 using Sockets: Sockets
-using BSON: BSON
-popfirst!(LOAD_PATH)
+using .BSON: BSON
 
 ## Allow catching InterruptExceptions
 Base.exit_on_sigint(false)

@@ -252,7 +252,10 @@ end
 const src_path = RelocatableFolders.@path @__DIR__
 
 function _get_worker_cmd(; exe, env, exeflags)
-    return addenv(`$exe --startup-file=no $exeflags $(joinpath(src_path, "worker.jl"))`, String["OPENBLAS_NUM_THREADS=1", Base.byteenv(env)...])
+    bson_dir = Base.pkgdir(BSON)
+    bson_src_jl = joinpath(bson_dir, "src", "BSON.jl")
+    bson_src_jl !== nothing && isfile(bson_src_jl) || error("BSON source file not available: $bson_src_jl")
+    return addenv(`$exe --startup-file=no $exeflags $(joinpath(src_path, "worker.jl")) $bson_src_jl`, String["OPENBLAS_NUM_THREADS=1", Base.byteenv(env)...])
 end
 
 
