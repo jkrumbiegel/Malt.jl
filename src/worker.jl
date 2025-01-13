@@ -1,8 +1,11 @@
 BSON_source_file = ARGS[1]
 include(BSON_source_file)
+using .BSON: BSON
+
+pushfirst!(LOAD_PATH, "@stdlib")
 using Logging: Logging, @debug
 using Sockets: Sockets
-using .BSON: BSON
+popfirst!(LOAD_PATH)
 
 ## Allow catching InterruptExceptions
 Base.exit_on_sigint(false)
