@@ -1,6 +1,9 @@
+BSON_source_file = ARGS[1]
+include(BSON_source_file)
+using .BSON: BSON
+
 pushfirst!(LOAD_PATH, "@stdlib")
 using Logging: Logging, @debug
-using Serialization: serialize, deserialize
 using Sockets: Sockets
 popfirst!(LOAD_PATH)
 
@@ -75,7 +78,7 @@ function serve(server::Sockets.TCPServer)
         msg_id = read(io, MsgID)
         
         msg_data, success = try
-            (Base.invokelatest(deserialize, io), true)
+            (Base.invokelatest(BSON.load, io)[:data], true)
         catch err
             (format_error(err, catch_backtrace()), false)
         finally

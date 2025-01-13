@@ -6,8 +6,8 @@ these functions are not stable.
 module Malt
 
 # using Logging: Logging, @debug
-using Serialization: serialize, deserialize
 using Sockets: Sockets
+using BSON: BSON
 
 using RelocatableFolders: RelocatableFolders
 
@@ -100,9 +100,9 @@ mutable struct Worker <: AbstractWorker
     current_message_id::MsgID
     expected_replies::Dict{MsgID,Channel{WorkerResult}}
 
-    function Worker(; env=String[], exeflags=[])
+    function Worker(; exe=Base.julia_cmd()[1], env=String[], exeflags=[])
         # Spawn process
-        cmd = _get_worker_cmd(; env, exeflags)
+        cmd = _get_worker_cmd(; exe, env, exeflags)
         proc = open(Cmd(
             cmd; 
             detach=true,
@@ -200,7 +200,7 @@ function _receive_loop(worker::Worker)
             msg_id = read(io, MsgID)
 
             msg_data, success = try
-                deserialize(io), true
+                BSON.load(io)[:data], true
             catch err
                 err, false
             finally
@@ -251,8 +251,11 @@ end
 # The entire `src` dir should be relocatable, so that worker.jl can include("MsgType.jl").
 const src_path = RelocatableFolders.@path @__DIR__
 
-function _get_worker_cmd(exe=Base.julia_cmd()[1]; env, exeflags)
-    return addenv(`$exe --startup-file=no $exeflags $(joinpath(src_path, "worker.jl"))`, String["OPENBLAS_NUM_THREADS=1", Base.byteenv(env)...])
+function _get_worker_cmd(; exe, env, exeflags)
+    bson_dir = Base.pkgdir(BSON)
+    bson_src_jl = joinpath(bson_dir, "src", "BSON.jl")
+    bson_src_jl !== nothing && isfile(bson_src_jl) || error("BSON source file not available: $bson_src_jl")
+    return addenv(`$exe --startup-file=no $exeflags $(joinpath(src_path, "worker.jl")) $bson_src_jl`, String["OPENBLAS_NUM_THREADS=1", Base.byteenv(env)...])
 end
 
 
